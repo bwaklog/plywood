@@ -1,0 +1,4 @@
+venv/
+
+# pesky old mac files
+.DS_Store
