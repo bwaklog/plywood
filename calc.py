@@ -3,7 +3,16 @@ from ply.src.ply import yacc
 
 
 # All tokens must be named in advance.
-tokens = ("PLUS", "MINUS", "TIMES", "DIVIDE", "LPAREN", "RPAREN", "NAME", "NUMBER")
+tokens = (
+    "PLUS", 
+    "MINUS", 
+    "TIMES", 
+    "DIVIDE", 
+    "LPAREN", 
+    "RPAREN", 
+    "NAME", 
+    "NUMBER"
+)
 
 # Ignored characters
 t_ignore = " \t"
@@ -41,8 +50,20 @@ def t_error(t):
 # Build the lexer object
 lexer = lex.lex()
 
-# --- Parser
+data = '''
+3 + 4 * 10
++20
+'''
 
+lexer.input(data)
+while True:
+    tok = lexer.token()
+    if not tok:
+        break
+    data = {"type": tok.type, "value": tok.value, "lineno": tok.lineno, "lexpos": tok.lexpos}
+    print(data)
+
+# --- Parser
 
 # Write functions for each grammar rule which is
 # specified in the docstring.
