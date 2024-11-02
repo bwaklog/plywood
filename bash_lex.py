@@ -116,7 +116,7 @@ def t_COMMENT(t):
 
 
 def t_error(t):
-    # print(f"Illegal character at {t.value[0]!r}")
+    print(f"Illegal character at {t.value[0]!r}")
     t.lexer.skip(1)
 
 
