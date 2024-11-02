@@ -1,7 +1,0 @@
-[project]
-name = "plywood"
-description = "UE23CS242A Mini Project"
-readme = "README.md"
-
-[project.urls]
-Homepage = "https://github.com/bwaklog/plywood"

@@ -69,6 +69,8 @@ tokens = (
     "NUMBER",
 ) + tuple(reserved.values())
 
+t_ignore = r" \t"
+
 # Specifications of tokens written in regex
 # t_ must match the exact name of the tokens
 # specified above
@@ -122,25 +124,25 @@ def t_error(t):
 
 lexer = lex.lex()
 
-if __name__ == "__main__":
-    test_input = """
-#This is a comment
-echo "hi"
-echo 'hi'
-a = 10
-if [[ 10 -eq 10]]; then 
-    echo "hi"
-fi
-"""
-    lexer.input(test_input)
-    while True:
-        tok = lexer.token()
-        if not tok:
-            break
-        data = {
-            "type": tok.type,
-            "value": tok.value,
-            "lineno": tok.lineno,
-            "lexpos": tok.lexpos,
-        }
-        print(data)
+# if __name__ == "__main__":
+#     test_input = """
+# #This is a comment
+# echo "hi"
+# echo 'hi'
+# a = 10
+# if [[ 10 -eq 10]]; then
+#     echo "hi"
+# fi
+# """
+#     lexer.input(test_input)
+#     while True:
+#         tok = lexer.token()
+#         if not tok:
+#             break
+#         data = {
+#             "type": tok.type,
+#             "value": tok.value,
+#             "lineno": tok.lineno,
+#             "lexpos": tok.lexpos,
+#         }
+#         print(data)

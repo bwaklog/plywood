@@ -1,4 +1,9 @@
-Use the venv for this project
+Clone the repository with the sub-modules for `ply` dependencies
+
+```bash
+git clone --recurse-submodules https://github.com/bwaklog/plywood.git
+```
+
 
 `ply` module path 
 
@@ -9,7 +14,7 @@ from ply.src.ply import yacc
 
 ---
 
-(wip) Constructs
+(WIP) Constructs
 1. Variable declarations
 2. Arithmetic Expression 
 3. if-else conditions
