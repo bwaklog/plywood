@@ -1,8 +1,8 @@
 from ply.src.ply import lex
 
 reserved = {
-    "then": "THEN",
     "if": "IF",
+    "then": "THEN",
     "else": "ELSE",
     "elif": "ELIF",
     "fi": "FI",
@@ -134,7 +134,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 
-# lexer = lex.lex()
+lexer = lex.lex()
 
 # if __name__ == "__main__":
 #     test_input = """

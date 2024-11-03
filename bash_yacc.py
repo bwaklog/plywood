@@ -5,8 +5,7 @@ from bash_lex import tokens
 def p_start(p):
     """start : assignment_word
     | echo_command
-    | condition
-    | if_command
+    | condition_chain
     | arithmetic_expression
     """
     p[0] = p[1]
@@ -23,7 +22,7 @@ def p_assignment_word(p):
 def p_command(p):
     """command : assignment_word
     | echo_command
-    | arithmetic_expr"""
+    | arithmetic_expression"""
     p[0] = p[1]
 
 def p_echo_command(p):
@@ -40,6 +39,11 @@ condition : identifier compare_operator identifier
 number compare_operator number
 """
 
+def p_operands(p):
+    """operands : IDENTIFIER
+    | NUMBER"""
+    p[0] = p[1]
+
 def p_compare_operator(p):
     """compare_operator : GREATER
     | EQUAL_TO
@@ -49,24 +53,38 @@ def p_compare_operator(p):
     | NOTEQUAL"""
     p[0] = p[1]
 
-def p_condition(p):
-    """condition : CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE
-    | CONDITIONAL_CONST_OPEN NUMBER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
-    | CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
-    | CONDITIONAL_CONST_OPEN NUMBER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE"""
+# """condition : CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE
+# | CONDITIONAL_CONST_OPEN NUMBER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
+# | CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
+# | CONDITIONAL_CONST_OPEN NUMBER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE"""
+
+def p_simple_condition(p):
+    """simple_condition : CONDITIONAL_CONST_OPEN operands compare_operator operands CONDITIONAL_CONST_CLOSE"""
     p[0] = {
-        "type": "condition",
+        "type": "simple_condition",
         "left": p[2],
         "operator": p[3],
         "right": p[4],
     }
+    pass
 
-def p_if_command(p): 
-    """if_command : IF condition THEN FI"""
+def p_condition_chain(p):
+    """condition_chain : simple_condition AND condition_chain
+    | simple_condition OR condition_chain 
+    | simple_condition"""
     p[0] = {
-        "type": "if_command",
-        "condition": p[2],
+        "type": "condition_chain",
+        "left": p[1],
+        "operator": p[2] if len(p) > 2 else None,
+        "right": p[3] if len(p) > 2 else None,
     }
+
+# def p_if_command(p): 
+#     """if_command : IF condition THEN FI"""
+#     p[0] = {
+#         "type": "if_command",
+#         "condition": p[2],
+#     }
 
 def p_arithmetic_expression(p):
     """arithmetic_expression : ARITHMETIC_EXP_START expression ARITHMETIC_EXP_END"""
@@ -91,9 +109,9 @@ def p_expression(p):
 
 def p_term(p):
     """term : factor
-    | term TIMES factor
+    | term MULTIPLY factor
     | term DIVIDE factor
-    |term MODULUS factor"""
+    | term MODULUS factor"""
 
     if len(p) == 2:
         p[0] = p[1]
