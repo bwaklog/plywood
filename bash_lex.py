@@ -47,6 +47,12 @@ reserved = {
 # Below are the list of tokens
 tokens = (
     "IDENTIFIER",
+    "NEWLINE",
+    "AND", # &&
+    "OR", # ||
+    "SINGLE_AND", # &
+    "SEMICOLON", # ;
+    "PIPELINE",
     "STRING",
     "COMMENT",
     "LPAREN",
@@ -77,10 +83,16 @@ t_ignore = r" \t"
 
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
+t_NEWLINE = r"\n"
+t_PIPELINE = r"\|"
 t_CONDITIONAL_CONST_OPEN = r"\[\["
 t_CONDITIONAL_CONST_CLOSE = r"\]\]"
 t_NOT = r"!"
 t_EXPANSION = r":"
+t_AND = r"&&"
+t_OR = r"\|\|"
+t_SINGLE_AND = r"&"
+t_SEMICOLON = r";"
 t_READ_FILE = r"\."
 t_EQUALS = r"="
 t_PLUS = r"\+"

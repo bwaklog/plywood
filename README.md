@@ -16,5 +16,16 @@ from ply.src.ply import yacc
 
 (WIP) Constructs
 1. Variable declarations
-2. Arithmetic Expression 
+2. Arithmetic Expression: `$((expr))`
+
+Example
+```bash
+x=100
+while [ $x -gt 0 ]
+do
+    command
+    x=$(($x-1))
+done
+```
+
 3. if-else conditions
