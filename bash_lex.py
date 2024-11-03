@@ -52,7 +52,7 @@ tokens = (
     "OR", # ||
     "SINGLE_AND", # &
     "SEMICOLON", # ;
-    "PIPELINE",
+    "PIPE"
     "STRING",
     "COMMENT",
     "LPAREN",
@@ -84,7 +84,6 @@ t_ignore = r" \t"
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_NEWLINE = r"\n"
-t_PIPELINE = r"\|"
 t_CONDITIONAL_CONST_OPEN = r"\[\["
 t_CONDITIONAL_CONST_CLOSE = r"\]\]"
 t_NOT = r"!"
