@@ -5,6 +5,7 @@ from bash_lex import tokens
 def p_start(p):
     """start : assignment_word
     | echo_command
+    | condition
     | if_command
     """
     p[0] = p[1]
@@ -19,55 +20,45 @@ def p_assignment_word(p):
     }
 
 def p_echo_command(p):
-    """echo_command : ECHO STRING"""
+    """echo_command : ECHO NUMBER
+    | ECHO IDENTIFIER
+    | ECHO STRING"""
     p[0] = {
         "type": "echo_command",
         "value": p[2],
     }
 
-def p_condition(p):
-    """condition : IDENTIFIER GREATER IDENTIFIER
-    | IDENTIFIER LESSER IDENTIFIER
-    | IDENTIFIER GREATEREQUAL IDENTIFIER
-    | IDENTIFIER LESSEREQUAL IDENTIFIER
-    | IDENTIFIER NOTEQUAL IDENTIFIER
-    | NUMBER GREATER NUMBER
-    | NUMBER LESSER NUMBER
-    | NUMBER GREATEREQUAL NUMBER
-    | NUMBER LESSEREQUAL NUMBER
-    | NUMBER NOTEQUAL NUMBER"""
-    p[0] = {
-        "type": "condition",
-        "left": p[1],
-        "right": p[3],
-        "operator": p[2],
-    }
+"""
+condition : identifier compare_operator identifier
+number compare_operator number
+"""
 
-def p_command(p):
-    """command : assignment_word
-    | echo_command"""
+def p_compare_operator(p):
+    """compare_operator : GREATER
+    | EQUAL_TO
+    | LESSER
+    | GREATEREQUAL
+    | LESSEREQUAL
+    | NOTEQUAL"""
     p[0] = p[1]
 
-def p_list(p):
-    """list : list NEWLINE
-    | list list
-    | list SEMICOLON list
-    | list AND list
-    | list OR list
-    | command"""
+def p_condition(p):
+    """condition : CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE
+    | CONDITIONAL_CONST_OPEN NUMBER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
+    | CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
+    | CONDITIONAL_CONST_OPEN NUMBER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE"""
     p[0] = {
-        "type": "list",
-        "left": p[1],
-        "right": p[2] if len(p) > 2 else None,
-        "operator": p[2] if len(p) > 2 else None,
+        "type": "condition",
+        "left": p[2],
+        "operator": p[3],
+        "right": p[4],
     }
 
-def p_if_command(p):
-    """if_command : IF CONDITIONAL_CONST_OPEN condition CONDITIONAL_CONST_CLOSE SEMICOLON THEN list FI"""
+def p_if_command(p): 
+    """if_command : IF condition THEN FI"""
     p[0] = {
         "type": "if_command",
         "condition": p[2],
-        "then": p[4],
     }
 
 # <SIMPLE-COMMAND-ELEMENT> ::= <WORD>

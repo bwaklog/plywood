@@ -1,14 +1,8 @@
 from ply.src.ply import lex
 
 reserved = {
-    # "!": "NOT",  # Pipelines
-    # ":": "EXPANSION",
-    # ".": "READ_FILE",
-    # Conditional Constructs
-    # "[[": "CONDITIONAL_CONST_OPEN",
-    # "]]": "CONDITIONAL_CONST_CLOSE",
-    "if": "IF",
     "then": "THEN",
+    "if": "IF",
     "else": "ELSE",
     "elif": "ELIF",
     "fi": "FI",
@@ -48,11 +42,11 @@ reserved = {
 tokens = (
     "IDENTIFIER",
     "NEWLINE",
-    "AND", # &&
-    "OR", # ||
-    "SINGLE_AND", # &
-    "SEMICOLON", # ;
-    "PIPE"
+    "AND",
+    "OR",
+    "SINGLE_AND",
+    "SEMICOLON",
+    "PIPE",
     "STRING",
     "COMMENT",
     "LPAREN",
@@ -70,6 +64,7 @@ tokens = (
     "LESSER",
     "NOTEQUAL",
     "EQUALS",
+    "EQUAL_TO",
     "GREATEREQUAL",
     "LESSEREQUAL",
     "NUMBER",
@@ -100,6 +95,7 @@ t_MULTIPLY = r"\*"
 t_DIVIDE = r"/"
 t_GREATER = r"-gt"
 t_LESSER = r"-lt"
+t_EQUAL_TO = r"-eq"
 t_GREATEREQUAL = r"-ge"
 t_LESSEREQUAL = r"-le"
 t_NOTEQUAL = r"-ne"
