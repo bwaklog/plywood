@@ -55,6 +55,8 @@ tokens = (
     "RPAREN",
     "CONDITIONAL_CONST_OPEN",
     "CONDITIONAL_CONST_CLOSE",
+    "BASIC_COND_OPEN",
+    "BASIC_COND_CLOSE",
     "NOT",
     "EXPANSION",
     "READ_FILE",
@@ -73,7 +75,7 @@ tokens = (
     "NUMBER"
 ) + tuple(reserved.values())
 
-t_ignore = r" \t"
+t_ignore = " \t"
 
 # Specifications of tokens written in regex
 # t_ must match the exact name of the tokens
@@ -86,6 +88,8 @@ t_RPAREN = r"\)"
 t_NEWLINE = r"\n"
 t_CONDITIONAL_CONST_OPEN = r"\[\["
 t_CONDITIONAL_CONST_CLOSE = r"\]\]"
+t_BASIC_COND_OPEN = r"\["
+t_BASIC_COND_CLOSE = r"\]"
 t_NOT = r"!"
 t_EXPANSION = r":"
 t_AND = r"&&"
@@ -138,11 +142,8 @@ lexer = lex.lex()
 
 # if __name__ == "__main__":
 #     test_input = """
-# #This is a comment
-# echo "hi"
-# echo 'hi'
-# a = 10
-# if [[ 10 -eq 10]]; then
+# if [[ 10 -eq 10]]
+#  then
 #     echo "hi"
 # fi
 # """

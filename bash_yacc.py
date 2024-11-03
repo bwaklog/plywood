@@ -1,3 +1,5 @@
+from typing import Callable
+import pprint
 from contextlib import contextmanager
 from ply.src.ply import yacc
 from bash_lex import tokens
@@ -7,6 +9,7 @@ def p_start(p):
     | echo_command
     | condition_chain
     | arithmetic_expression
+    | if_command
     """
     p[0] = p[1]
 
@@ -22,8 +25,28 @@ def p_assignment_word(p):
 def p_command(p):
     """command : assignment_word
     | echo_command
-    | arithmetic_expression"""
+    | arithmetic_expression
+    | if_command"""
     p[0] = p[1]
+
+def p_newline_list(p):
+    """newline_list :
+    | newline_list NEWLINE"""
+    p[0] = p[1] if len(p) == 2 else []
+
+# def p_list_1(p):
+#     """list_1 : list_1 AND newline_list list_1
+#     | list_1 OR newline_list list_1
+#     | list_1 SINGLE_AND newline_list list_1
+#     | list_1 SEMICOLON newline_list list_1
+#     | list_1 NEWLINE newline_list list_1
+#     | command"""
+#     p[0] = {
+#         "type": "list_1",
+#         "left": p[1],
+#         "operator": p[2],
+#         "right": p[4] if len(p) > 2 else None,
+#     }
 
 def p_echo_command(p):
     """echo_command : ECHO NUMBER
@@ -53,38 +76,136 @@ def p_compare_operator(p):
     | NOTEQUAL"""
     p[0] = p[1]
 
-# """condition : CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE
-# | CONDITIONAL_CONST_OPEN NUMBER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
-# | CONDITIONAL_CONST_OPEN IDENTIFIER compare_operator NUMBER CONDITIONAL_CONST_CLOSE
-# | CONDITIONAL_CONST_OPEN NUMBER compare_operator IDENTIFIER CONDITIONAL_CONST_CLOSE"""
+def p_empty(p):
+    """empty :"""
+    pass
 
+# [ ]
 def p_simple_condition(p):
-    """simple_condition : CONDITIONAL_CONST_OPEN operands compare_operator operands CONDITIONAL_CONST_CLOSE"""
+    """simple_condition : BASIC_COND_OPEN operands compare_operator operands BASIC_COND_CLOSE"""
     p[0] = {
-        "type": "simple_condition",
+        "type": "basic_condition",
         "left": p[2],
         "operator": p[3],
         "right": p[4],
     }
-    pass
 
-def p_condition_chain(p):
-    """condition_chain : simple_condition AND condition_chain
-    | simple_condition OR condition_chain 
-    | simple_condition"""
+# [[ ]]
+def p_extended_condition(p):
+    """extended_condition : CONDITIONAL_CONST_OPEN operands compare_operator operands CONDITIONAL_CONST_CLOSE"""
     p[0] = {
-        "type": "condition_chain",
+        "type": "extended_condition",
+        "left": p[2],
+        "operator": p[3],
+        "right": p[4],
+    }
+
+def p_condition(p):
+    """condition : simple_condition
+    | extended_condition"""
+    p[0] = p[1]
+
+def p_newline_list(p):
+    """newline_list : empty
+    | newline_list NEWLINE"""
+    p[0] = p[1] if len(p) == 2 else []
+
+def command_list(p):
+    """command_list : command
+    | command_list newline_list command"""
+    p[0] = {
+        "type": "command_list",
         "left": p[1],
-        "operator": p[2] if len(p) > 2 else None,
         "right": p[3] if len(p) > 2 else None,
     }
 
-# def p_if_command(p): 
-#     """if_command : IF condition THEN FI"""
-#     p[0] = {
-#         "type": "if_command",
-#         "condition": p[2],
-#     }
+"""
+if [ condition ] && [ condition ]; then
+    echo "true"
+fi
+
+if [[ condition ]] && [[ condition ]]; then 
+    echo "true"
+fi
+
+if [ condition ] && [ condition ]
+then 
+    echo "true"
+fi
+"""
+def p_condition_chain(p):
+    """condition_chain : condition AND condition
+    | condition OR condition 
+    | condition"""
+    if len(p) == 4:
+        p[0] = {
+            "type": "condition_chain",
+            "left_condition": p[1],
+            "condition_join": p[2],
+            "condition_right": p[3],
+        }
+    else:
+        p[0] = {
+            "type": "condition_chain",
+            "condition": p[1],
+        }
+
+def p_else_command(p):
+    """else_command : ELSE command"""
+    p[0] = {
+        "type": "else_command",
+        "command": p[2],
+    }
+
+def p_elif_command(p):
+    """elif_command : ELIF condition_chain SEMICOLON THEN command"""
+    p[0] = {
+        "type": "elif_command",
+        "condition": p[2],
+        "then_command": p[5],
+    }
+    # if len(p) == 5:
+    #     pass
+    # else:
+    #     # There is another elif condition
+    #     p[0]["elif_command"] = p[6]
+
+# if [ 10 -eq 10 ]; then echo "hi"; else echo "byte"; fi
+def p_if_command(p):
+    """if_command : IF condition_chain SEMICOLON THEN command SEMICOLON FI
+    | IF condition_chain SEMICOLON THEN command SEMICOLON else_command SEMICOLON FI
+    | IF condition_chain SEMICOLON THEN command SEMICOLON elif_command SEMICOLON FI
+    | IF condition_chain SEMICOLON THEN command SEMICOLON elif_command SEMICOLON else_command SEMICOLON FI"""
+    if (len(p) == 8):
+        p[0] = {
+            "type": "if_command",
+            "condition": p[2],
+            "then_command": p[5],
+        }
+    elif (len(p) == 10) and type(p[7]) == dict:
+        p[0] = {
+            "type": "if_else_elif_command" if p[7]["type"] == "elif_command" else "if_else_command",
+            "condition": p[2],
+            "then_command": p[5],
+        }
+        # "else_command": p[7],
+        if p[7]["type"] == "elif_command":
+            p[0]["elif_command"] = p[7]
+        elif p[7]["type"] == "else_command":
+            p[0]["else_command"]
+    else:
+        p[0] = {
+            "type": "if_elif_else_command",
+            "condition": p[2],
+            "then_command": p[5],
+            "elif_command": p[7],
+            "else_command": p[9],
+        }
+
+def p_compound_list(p):
+    """compound_list : IDENTIFIER"""
+    p[0] = p[1]
+
 
 def p_arithmetic_expression(p):
     """arithmetic_expression : ARITHMETIC_EXP_START expression ARITHMETIC_EXP_END"""
@@ -150,188 +271,32 @@ def p_factor(p):
         p[0] = p[2]
 
 
-# <SIMPLE-COMMAND-ELEMENT> ::= <WORD>
-#                           |  <ASSIGNMENT-WORD>
-#                           |  <REDIRECTION>
-# def p_simple_command_element(p):
-#     """simple_command_element : IDENTIFIER
-#     | assignment_word
-#     | echo_command"""
-#     p[0] = p[1]
-
-# # <SIMPLE-COMMAND> ::=  <SIMPLE-COMMAND-ELEMENT>
-# #                    |  <SIMPLE-COMMAND> <SIMPLE-COMMAND-ELEMENT>
-# def p_simple_command(p):
-#     """simple_command : simple_command_element
-#     | simple_command simple_command_element"""
-#     p[0] = {
-#         "type": "simple_command",
-#         "elements": p[1] if len(p) == 2 else p[1] + [p[2]],
-#     }
-
-# # <COMMAND> ::=  <SIMPLE-COMMAND>
-# #             |  <SHELL-COMMAND>
-# #             |  <SHELL-COMMAND> <REDIRECTION-LIST>
-# def p_command(p):
-#     """command : simple_command"""
-#     p[0] = p[1]
-
-# # <SHELL-COMMAND> ::=  <FOR-COMMAND>
-# #                   |  <CASE-COMMAND>
-# #                   |  while <COMPOUND-LIST> do <COMPOUND-LIST> done
-# #                   |  until <COMPOUND-LIST> do <COMPOUND-LIST> done
-# #                   |  <SELECT-COMMAND>
-# #                   |  <IF-COMMAND>
-# #                   |  <SUBSHELL>
-# #                   |  <GROUP-COMMAND>
-# #                   |  <FUNCTION-DEF>
-# def p_shell_command(p):
-#     """shell_command : if_command"""
-#     p[0] = p[1]
-
-# def p_pipeline(p):
-#     """pipeline : pipeline PIPELINE newline pipeline
-#     | command"""
-
-# # <PIPELINE-COMMAND> ::= <PIPELINE>
-# #                     |  '!' <PIPELINE>
-# #                     |  <TIMESPEC> <PIPELINE>
-# #                     |  <TIMESPEC> '!' <PIPELINE>
-# #                     |  '!' <TIMESPEC> <PIPELINE>
-# def p_pipeline_command(p):
-#     """pipeline_command : pipeline
-#     | NOT pipeline"""
-#     p[0] = {
-#         "type": "pipeline_command",
-#         "negated": len(p) == 3,
-#         "pipeline": p[2] if len(p) == 3 else p[1],
-#     }
-
-# """
-# AND-OR Lists is a sequence of one or more pipelines separated
-# by operators `&&` and `||` (equal precedence)
-
-# A list is a sequence of one or more AND-OR lists separated by
-# the operators `;` and `&`
-
-# A `;` separator or <newline> cause the preceding AND-OR list to be
-# executed sequentially; an `&` separator causes asynchronous execution
-# of the preceding AND-OR list.
-
-# false && echo foo || echo bar 
-# true || echo foo && echo bar
-
-# The term `compound-list` -> sequence of lists separated by <newline>
-# characters that can be preceded or followed by an arbitrary number of 
-# <newline> characters
-# """
-
-
-# def p_newline(p):
-#     """newline : NEWLINE
-#     | NEWLINE newline"""
-#     p[0] = p[1]
-
-# # <LIST1> ::=   <LIST1> '&&' <NEWLINE-LIST> <LIST1>
-# #            |  <LIST1> '||' <NEWLINE-LIST> <LIST1>
-# #            |  <LIST1> '&' <NEWLINE-LIST> <LIST1>
-# #            |  <LIST1> ';' <NEWLINE-LIST> <LIST1>
-# #            |  <LIST1> '\n' <NEWLINE-LIST> <LIST1>
-# #            |  <PIPELINE-COMMAND>
-# def p_list_1(p):
-#     """list1 : list1 AND newline list1
-#     | list1 OR newline list1
-#     | list1 SINGLE_AND newline list1
-#     | list1 SEMICOLON newline list1
-#     | list1 NEWLINE newline list1
-#     | pipeline_command"""
-#     p[0] = {
-#         "type": "list1",
-#         "left": p[1],
-#         "operator": p[2],
-#         "right": p[4],
-#     }
-
-# # <LIST0> ::=   <LIST1> '\n' <NEWLINE-LIST>
-# #            |  <LIST1> '&' <NEWLINE-LIST>
-# #            |  <LIST1> ';' <NEWLINE-LIST>
-# def p_list_0(p):
-#     """list : list1 NEWLINE newline
-#     | list1 SINGLE_AND newline
-#     | list1 SEMICOLON newline"""
-#     p[0] = {
-#         "type": "list_0",
-#         "left": p[1],
-#         "operator": p[2],
-#         "right": p[3],
-#     }
-
-# # <LIST> ::=   <NEWLINE-LIST> <LIST0>
-# def p_list(p):
-#     """list : newline list"""
-#     p[0] = {
-#         "type": "list",
-#         "left": p[1],
-#         "right": p[2],
-#     }
-
-# # <COMPOUND-LIST> ::=  <LIST>
-# #                   |  <NEWLINE-LIST> <LIST1>
-# def p_compound_list(p):
-#     """compound_list : list
-#     | newline list"""
-#     p[0] = {
-#         "type": "compound_list",
-#         "left": p[1],
-#         "right": p[2] if len(p) > 2 else None,
-#     }
-
-# # <ELIF-CLAUSE> ::= elif <COMPOUND-LIST> then <COMPOUND-LIST>
-# #            | elif <COMPOUND-LIST> then <COMPOUND-LIST> else <COMPOUND-LIST>
-# #            | elif <COMPOUND-LIST> then <COMPOUND-LIST> <ELIF-CLAUSE>
-# def p_elif_caluse(p):
-#     """elif_clause : ELIF compound_list THEN compound_list
-#     | ELIF compound_list THEN compound_list ELSE compound_list
-#     | ELIF compound_list THEN compound_list elif_clause"""
-#     p[0] = {
-#         "type": "elif_clause",
-#         "condition": p[2],
-#         "then": p[4],
-#         "else": p[6] if len(p) > 5 else None,
-#     }
-
-# # <IF-COMMAND> ::= if <COMPOUND-LIST> then <COMPOUND-LIST> fi
-# #           | if <COMPOUND-LIST> then <COMPOUND-LIST> else <COMPOUND-LIST> fi
-# #           | if <COMPOUND-LIST> then <COMPOUND-LIST> <ELIF-CLAUSE> fi
-# def p_if_command(p):
-#     """if_command : IF compound_list THEN compound_list FI
-#     | IF compound_list THEN compound_list ELSE compound_list FI
-#     | IF compound_list THEN compound_list elif_clause FI"""
-#     p[0] = {
-#         "type": "if_command",
-#         "condition": p[2],
-#         "then": p[4],
-#         "else": p[6] if len(p) > 5 else None,
-#     }
-
 def p_error(p):
     if p:
         print("Syntax error at: ", p.value)
     else:
         print("Syntax error at EOF")
 
-# sample input for if
-# if true; then echo "true"; fi
-
 # Build the parser
 parser = yacc.yacc()
 
-while True:
-    try:
-        s = input("inp >")
-    except EOFError:
-        break
-    if not s:
-        continue
-    result = parser.parse(s)
-    print(result)
+def IGNORE_LINE(x: str) -> bool:
+    if x == "\n":
+        return False
+    elif x.startswith("#"):
+        return False
+    else:
+        return True
+
+CLEAN_LINE: Callable[[str], str] = str.strip
+# IGNORE_NEWLINE: Callable[[str], bool] = lambda x: x != "\n"
+
+commands = list(
+    map(
+        CLEAN_LINE, 
+        filter(IGNORE_LINE, open("test.sh", "r").readlines()[1:])
+    )
+)
+
+for command in commands:
+    pprint.pp(parser.parse(command))
