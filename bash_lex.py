@@ -40,6 +40,8 @@ reserved = {
 
 # Below are the list of tokens
 tokens = (
+    "ARITHMETIC_EXP_START",
+    "ARITHMETIC_EXP_END",
     "IDENTIFIER",
     "NEWLINE",
     "AND",
@@ -60,6 +62,7 @@ tokens = (
     "MINUS",
     "MULTIPLY",
     "DIVIDE",
+    "MODULUS",
     "GREATER",
     "LESSER",
     "NOTEQUAL",
@@ -67,7 +70,7 @@ tokens = (
     "EQUAL_TO",
     "GREATEREQUAL",
     "LESSEREQUAL",
-    "NUMBER",
+    "NUMBER"
 ) + tuple(reserved.values())
 
 t_ignore = r" \t"
@@ -76,6 +79,8 @@ t_ignore = r" \t"
 # t_ must match the exact name of the tokens
 # specified above
 
+t_ARITHMETIC_EXP_START = r"\$\(\(|\(\(" 
+t_ARITHMETIC_EXP_END = r"\)\)"
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
 t_NEWLINE = r"\n"
@@ -92,6 +97,7 @@ t_EQUALS = r"="
 t_PLUS = r"\+"
 t_MINUS = r"\-"
 t_MULTIPLY = r"\*"
+t_MODULUS = r"%"
 t_DIVIDE = r"/"
 t_GREATER = r"-gt"
 t_LESSER = r"-lt"
@@ -100,17 +106,16 @@ t_GREATEREQUAL = r"-ge"
 t_LESSEREQUAL = r"-le"
 t_NOTEQUAL = r"-ne"
 
-
 def t_IDENTIFIER(t):
-    # NOTE: idts this refex identifier is correct
+    # NOTE: idts this regex identifier is correct
     r"[a-zA-Z][a-zA-Z0-9\-]*"
     t.type = reserved.get(t.value, "IDENTIFIER")
     return t
 
 
 def t_NUMBER(t):
-    r"\d+"
-    t.value = int(t.value)
+    r"\d*\.?\d+"
+    t.value = float(t.value) if '.' in t.value else int(t.value)
     return t
 
 
@@ -129,7 +134,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 
-lexer = lex.lex()
+# lexer = lex.lex()
 
 # if __name__ == "__main__":
 #     test_input = """

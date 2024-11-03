@@ -7,6 +7,7 @@ def p_start(p):
     | echo_command
     | condition
     | if_command
+    | arithmetic_expression
     """
     p[0] = p[1]
 
@@ -18,6 +19,12 @@ def p_assignment_word(p):
         "name": p[1],
         "value": p[3],
     }
+
+def p_command(p):
+    """command : assignment_word
+    | echo_command
+    | arithmetic_expr"""
+    p[0] = p[1]
 
 def p_echo_command(p):
     """echo_command : ECHO NUMBER
@@ -60,6 +67,70 @@ def p_if_command(p):
         "type": "if_command",
         "condition": p[2],
     }
+
+def p_arithmetic_expression(p):
+    """arithmetic_expression : ARITHMETIC_EXP_START expression ARITHMETIC_EXP_END"""
+    p[0] = {
+        "type" : "arithmetic_expression",
+        "value" : p[2]
+    }
+
+def p_expression(p):
+    """expression : term
+    | expression PLUS term
+    | expression MINUS term"""
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {
+            "type" : "binary_operation",
+            "left" : p[1],
+            "operator" : p[2],
+            "right": p[3]
+        }
+
+def p_term(p):
+    """term : factor
+    | term TIMES factor
+    | term DIVIDE factor
+    |term MODULUS factor"""
+
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = {
+            "type" : "binary_operation",
+            "left" : p[1],
+            "operator" : p[2],
+            "right" : p[3]
+        }
+
+def p_factor(p):
+    """factor : NUMBER
+    | IDENTIFIER
+    | LPAREN expression RPAREN
+    | PLUS factor
+    | MINUS factor"""
+    if len(p) == 2:
+        if isinstance(p[1], (int, float)):
+            p[0] = {
+                "type": "number",
+                "value": p[1]
+            }
+        else:
+            p[0] = {
+                "type": "identifier",
+                "value": p[1]
+            }
+    elif len(p) == 3:
+        p[0] = {
+            "type": "unary_operation",
+            "operator": p[1],
+            "operand": p[2]
+        }
+    else:
+        p[0] = p[2]
+
 
 # <SIMPLE-COMMAND-ELEMENT> ::= <WORD>
 #                           |  <ASSIGNMENT-WORD>
