@@ -2,7 +2,7 @@ from typing import Callable
 import pprint
 from contextlib import contextmanager
 from ply.src.ply import yacc
-from bash_lex import tokens
+from bash_lex import tokens, lexer
 
 def p_start(p):
     """start : assignment_word
@@ -289,14 +289,36 @@ def IGNORE_LINE(x: str) -> bool:
         return True
 
 CLEAN_LINE: Callable[[str], str] = str.strip
-# IGNORE_NEWLINE: Callable[[str], bool] = lambda x: x != "\n"
 
-commands = list(
-    map(
-        CLEAN_LINE, 
-        filter(IGNORE_LINE, open("test.sh", "r").readlines()[1:])
+def get_commands(file: str) -> list[str]:
+    return list(
+        map(
+            CLEAN_LINE,
+            filter(IGNORE_LINE, open(file, "r").readlines()[1:])
+        )
     )
-)
 
-for command in commands:
-    pprint.pp(parser.parse(command))
+def generate_tokens(command: str) -> list[dict]:
+    tokens = []
+    lexer.input(command)
+    while True:
+        tok = lexer.token()
+        if not tok:
+            break
+        tokens.append({
+            "type": tok.type,
+            "value": tok.value,
+            "lineno": tok.lineno,
+            "lexpos": tok.lexpos
+        })
+    return tokens
+
+
+if __name__=="__main__":
+    commands = get_commands(file="test.sh")
+    for command in commands:
+        parsed_output = parser.parse(command)
+        pprint.pp({
+            "tokens": generate_tokens(command),
+            "parsed_output": parsed_output
+        })
