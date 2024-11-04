@@ -13,6 +13,19 @@ def p_start(p):
     """
     p[0] = p[1]
 
+def p_empty(p):
+    """empty :"""
+    pass
+
+def p_any_space(p):
+    """any_space : empty
+    | any_space SPACE"""
+    pass
+
+def p_no_space(p):
+    """no_space : empty"""
+    pass
+
 def p_assignment_word(p):
     """assignment_word : IDENTIFIER EQUALS IDENTIFIER
     | IDENTIFIER EQUALS NUMBER"""
@@ -49,12 +62,12 @@ def p_newline_list(p):
 #     }
 
 def p_echo_command(p):
-    """echo_command : ECHO NUMBER
-    | ECHO IDENTIFIER
-    | ECHO STRING"""
+    """echo_command : ECHO SPACE NUMBER
+    | ECHO SPACE IDENTIFIER
+    | ECHO SPACE STRING"""
     p[0] = {
         "type": "echo_command",
-        "value": p[2],
+        "value": p[3],
     }
 
 """
@@ -76,28 +89,25 @@ def p_compare_operator(p):
     | NOTEQUAL"""
     p[0] = p[1]
 
-def p_empty(p):
-    """empty :"""
-    pass
 
 # [ ]
 def p_simple_condition(p):
-    """simple_condition : BASIC_COND_OPEN operands compare_operator operands BASIC_COND_CLOSE"""
+    """simple_condition : BASIC_COND_OPEN SPACE operands SPACE compare_operator SPACE operands SPACE BASIC_COND_CLOSE"""
     p[0] = {
         "type": "basic_condition",
-        "left": p[2],
-        "operator": p[3],
-        "right": p[4],
+        "left": p[3],
+        "operator": p[5],
+        "right": p[7],
     }
 
 # [[ ]]
 def p_extended_condition(p):
-    """extended_condition : CONDITIONAL_CONST_OPEN operands compare_operator operands CONDITIONAL_CONST_CLOSE"""
+    """extended_condition : CONDITIONAL_CONST_OPEN SPACE operands SPACE compare_operator SPACE operands SPACE CONDITIONAL_CONST_CLOSE"""
     p[0] = {
         "type": "extended_condition",
-        "left": p[2],
-        "operator": p[3],
-        "right": p[4],
+        "left": p[3],
+        "operator": p[5],
+        "right": p[7],
     }
 
 def p_condition(p):
@@ -105,12 +115,12 @@ def p_condition(p):
     | extended_condition"""
     p[0] = p[1]
 
-def p_newline_list(p):
-    """newline_list : empty
-    | newline_list NEWLINE"""
-    p[0] = p[1] if len(p) == 2 else []
+# def p_newline_list(p):
+#     """newline_list : empty
+#     | newline_list NEWLINE"""
+#     p[0] = p[1] if len(p) == 2 else []
 
-def command_list(p):
+def p_command_list(p):
     """command_list : command
     | command_list newline_list command"""
     p[0] = {
@@ -119,30 +129,16 @@ def command_list(p):
         "right": p[3] if len(p) > 2 else None,
     }
 
-"""
-if [ condition ] && [ condition ]; then
-    echo "true"
-fi
-
-if [[ condition ]] && [[ condition ]]; then 
-    echo "true"
-fi
-
-if [ condition ] && [ condition ]
-then 
-    echo "true"
-fi
-"""
 def p_condition_chain(p):
-    """condition_chain : condition AND condition
-    | condition OR condition 
+    """condition_chain : condition SPACE AND SPACE condition
+    | condition SPACE OR SPACE condition 
     | condition"""
     if len(p) == 4:
         p[0] = {
             "type": "condition_chain",
             "left_condition": p[1],
-            "condition_join": p[2],
-            "condition_right": p[3],
+            "condition_join": p[3],
+            "condition_right": p[5],
         }
     else:
         p[0] = {
@@ -151,18 +147,18 @@ def p_condition_chain(p):
         }
 
 def p_else_command(p):
-    """else_command : ELSE command"""
+    """else_command : ELSE SPACE command"""
     p[0] = {
         "type": "else_command",
-        "command": p[2],
+        "command": p[3],
     }
 
 def p_elif_command(p):
-    """elif_command : ELIF condition_chain SEMICOLON THEN command"""
+    """elif_command : ELIF SPACE condition_chain SEMICOLON SPACE THEN SPACE command"""
     p[0] = {
         "type": "elif_command",
-        "condition": p[2],
-        "then_command": p[5],
+        "condition": p[3],
+        "then_command": p[8],
     }
     # if len(p) == 5:
     #     pass
@@ -172,34 +168,34 @@ def p_elif_command(p):
 
 # if [ 10 -eq 10 ]; then echo "hi"; else echo "byte"; fi
 def p_if_command(p):
-    """if_command : IF condition_chain SEMICOLON THEN command SEMICOLON FI
-    | IF condition_chain SEMICOLON THEN command SEMICOLON else_command SEMICOLON FI
-    | IF condition_chain SEMICOLON THEN command SEMICOLON elif_command SEMICOLON FI
-    | IF condition_chain SEMICOLON THEN command SEMICOLON elif_command SEMICOLON else_command SEMICOLON FI"""
-    if (len(p) == 8):
+    """if_command : IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE FI
+    | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE else_command SEMICOLON SPACE FI
+    | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE elif_command SEMICOLON SPACE FI
+    | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE elif_command SEMICOLON SPACE else_command SEMICOLON SPACE FI"""
+    if (len(p) == 12):
         p[0] = {
             "type": "if_command",
-            "condition": p[2],
-            "then_command": p[5],
+            "condition": p[3],
+            "then_command": p[8],
         }
-    elif (len(p) == 10) and type(p[7]) == dict:
+    elif (len(p) == 15) and type(p[11]) == dict:
         p[0] = {
-            "type": "if_else_elif_command" if p[7]["type"] == "elif_command" else "if_else_command",
-            "condition": p[2],
-            "then_command": p[5],
+            "type": "if_else_elif_command" if p[11]["type"] == "elif_command" else "if_else_command",
+            "condition": p[3],
+            "then_command": p[8],
         }
         # "else_command": p[7],
-        if p[7]["type"] == "elif_command":
-            p[0]["elif_command"] = p[7]
-        elif p[7]["type"] == "else_command":
-            p[0]["else_command"]
+        if p[11]["type"] == "elif_command":
+            p[0]["elif_command"] = p[11]
+        elif p[11]["type"] == "else_command":
+            p[0]["else_command"] = p[11]
     else:
         p[0] = {
             "type": "if_elif_else_command",
-            "condition": p[2],
-            "then_command": p[5],
-            "elif_command": p[7],
-            "else_command": p[9],
+            "condition": p[3],
+            "then_command": p[8],
+            "elif_command": p[11],
+            "else_command": p[14],
         }
 
 def p_compound_list(p):
@@ -320,5 +316,5 @@ if __name__=="__main__":
         parsed_output = parser.parse(command)
         pprint.pp({
             "tokens": generate_tokens(command),
-            "parsed_output": parsed_output
+            "parsed_output": parsed_output if parsed_output != None else "[ERROR] Failed to parse"
         })

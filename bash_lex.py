@@ -48,6 +48,7 @@ tokens = (
     "OR",
     "SINGLE_AND",
     "SEMICOLON",
+    "SPACE",
     "PIPE",
     "STRING",
     "COMMENT",
@@ -75,7 +76,7 @@ tokens = (
     "NUMBER"
 ) + tuple(reserved.values())
 
-t_ignore = " \t"
+t_ignore = "\t"
 
 # Specifications of tokens written in regex
 # t_ must match the exact name of the tokens
@@ -96,6 +97,8 @@ t_AND = r"&&"
 t_OR = r"\|\|"
 t_SINGLE_AND = r"&"
 t_SEMICOLON = r";"
+# regex for a single space
+t_SPACE = r"\s"
 t_READ_FILE = r"\."
 t_EQUALS = r"="
 t_PLUS = r"\+"
@@ -134,7 +137,7 @@ def t_COMMENT(t):
 
 
 def t_error(t):
-    print(f"Illegal character at {t.value[0]!r}")
+    # print(f"Illegal character at {t.value[0]!r}")
     t.lexer.skip(1)
 
 
