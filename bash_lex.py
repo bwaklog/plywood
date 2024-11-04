@@ -61,6 +61,7 @@ tokens = (
     "NOT",
     "EXPANSION",
     "READ_FILE",
+    "DOLLAR",
     "PLUS",
     "MINUS",
     "MULTIPLY",
@@ -82,7 +83,7 @@ t_ignore = "\t"
 # t_ must match the exact name of the tokens
 # specified above
 
-t_ARITHMETIC_EXP_START = r"\$\(\(|\(\(" 
+t_ARITHMETIC_EXP_START = r"\$\(\(" 
 t_ARITHMETIC_EXP_END = r"\)\)"
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
@@ -100,6 +101,7 @@ t_SEMICOLON = r";"
 # regex for a single space
 t_SPACE = r"\s"
 t_READ_FILE = r"\."
+t_DOLLAR = r"\$"
 t_EQUALS = r"="
 t_PLUS = r"\+"
 t_MINUS = r"\-"
