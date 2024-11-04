@@ -5,12 +5,7 @@ from ply.src.ply import yacc
 from bash_lex import tokens, lexer
 
 def p_start(p):
-    """start : assignment_word
-    | echo_command
-    | condition_chain
-    | arithmetic_expression
-    | if_command
-    """
+    """start : command_list"""
     p[0] = p[1]
 
 def p_empty(p):
@@ -39,6 +34,7 @@ def p_command(p):
     """command : assignment_word
     | echo_command
     | arithmetic_expression
+    | condition_chain
     | if_command"""
     p[0] = p[1]
 
@@ -122,18 +118,21 @@ def p_condition(p):
 
 def p_command_list(p):
     """command_list : command
-    | command_list newline_list command"""
+    | command_list SPACE AND SPACE command_list
+    | command_list SPACE OR SPACE command_list"""
     p[0] = {
         "type": "command_list",
-        "left": p[1],
-        "right": p[3] if len(p) > 2 else None,
+        "left_command": p[1],
     }
+    if len(p) == 6:
+        p[0]["list_join"] = p[3]
+        p[0]["right_command"] = p[5]
 
 def p_condition_chain(p):
-    """condition_chain : condition SPACE AND SPACE condition
-    | condition SPACE OR SPACE condition 
+    """condition_chain : condition_chain SPACE AND SPACE condition_chain
+    | condition_chain SPACE OR SPACE condition_chain 
     | condition"""
-    if len(p) == 4:
+    if len(p) == 6:
         p[0] = {
             "type": "condition_chain",
             "left_condition": p[1],
@@ -168,7 +167,7 @@ def p_elif_command(p):
 
 # if [ 10 -eq 10 ]; then echo "hi"; else echo "byte"; fi
 def p_if_command(p):
-    """if_command : IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE FI
+    """if_command : IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command_list SEMICOLON SPACE FI
     | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE else_command SEMICOLON SPACE FI
     | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE elif_command SEMICOLON SPACE FI
     | IF SPACE condition_chain SEMICOLON SPACE THEN SPACE command SEMICOLON SPACE elif_command SEMICOLON SPACE else_command SEMICOLON SPACE FI"""
@@ -315,6 +314,6 @@ if __name__=="__main__":
     for command in commands:
         parsed_output = parser.parse(command)
         pprint.pp({
-            "tokens": generate_tokens(command),
+            # "tokens": generate_tokens(command),
             "parsed_output": parsed_output if parsed_output != None else "[ERROR] Failed to parse"
         })
